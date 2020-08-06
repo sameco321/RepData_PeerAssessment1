@@ -1,25 +1,160 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+### WORK OF THE SECOND WEEK REPRODUCIBLE INVESTIGATION
+
+This document contains the procedures requested for the presentation of the assignment of the second week of the reproducible research course in this document, we will find the procedures and procedures taken to address the following questions requested in the assignment:
+
+1. Code for reading in the dataset and/or processing the data.
+2. Histogram of the total number of steps taken each day.
+3. Mean and median number of steps taken each day.
+4. Time series plot of the average number of steps taken.
+5. The 5-minute interval that, on average, contains the maximum number of steps.
+6. Code to describe and show a strategy for imputing missing data.
+7. Histogram of the total number of steps taken each day after missing values are imputed.
+
+8.Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends.
+
+9.All of the R code needed to reproduce the results (numbers, plots, etc.) in the report.
 
 
-## Loading and preprocessing the data
+## DEVELOPING 
+
+# *1.Code for reading in the dataset and/or processing the data*
+
+We will start by importing the data. The data used for this activity was data collected by
+a group of enthusiasts who take specific measures on themselves to improve their health, find patterns in their behavior, or because they are technology experts.
+
+The variables included in this dataset are:
+
+steps: Number of steps taking in a 5-minute interval (missing values are coded as NA).
+date: The date on which the measurement was taken in YYYY-MM-DD format.
+interval: Identifier for the 5-minute interval in which measurement was taken
+
+The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
+
+The *tidyverse* and *lubridate* libraries were used in this activity
+
+the data was provided in the course activity when downloading these are stored locally in ZIP format the storage address can change the configuration of each computer and the operating system.
+
+The following procedure shows how to load the data in a study from the local storage of the computer used to carry out this document.
+
+# CODE USED
+
+```{r}
+# punto 1
+actividad <- read.csv("~/Downloads/actividad.csv")
+```
+ 
+
+We load the libraries, we review the structure of our data and we review how our data looks.
+
+```{r}
+library(tidyverse)
+library(lubridate)
+
+str(actividad)
+head(actividad)
+```
+
+We will continue to perform the steps in the order described in the explanation of the activity.
+
+# 2. Histogram of the total number of steps taken each day.
+
+```{r}
+
+hist(actividad$steps)
+```
+
+# 3. Mean and median number of steps taken each day.
+
+For point three we need to perform a transformation of the date variable to time format in order to generate the time series graphs.
+
+```{r}
+tiempo <- actividad %>%
+        mutate(fecha = ymd(date))
+
+tiempo1 <- select(tiempo, fecha, interval, steps)
+
+pasosdia <- tiempo1 %>%
+        group_by(fecha) %>%
+        summarise(media = mean(steps, na.rm = T),
+                  medianaD = median(steps, na.rm = T),
+                  .groups = 'drop') %>%
+        filter(media > 0)
+```
+
+
+# 4. Time series plot of the average number of steps taken.
+
+```{r}
+plot(pasosdia$fecha, pasosdia$media, type = "l")
+```
+
+
+# 5. The 5-minute interval that, on average, contains the maximum number of steps.
+
+```{r}
+maximo <- tiempo1 %>%
+        group_by(interval) %>%
+        summarise(media = mean(steps, na.rm = T),
+                  .groups = 'drop') %>%
+        arrange(desc(media)) 
+
+first(maximo$interval)
+first(maximo$media)
+
+valorMax <- filter(maximo, interval == 835)
+valorMax
+```
+
+# 6. Code to describe and show a strategy for imputing missing data.
+
+
+*The imputation is carried out by replacing the missing values with the mean*
+
+```{r}
+imputNa <- round(mean(tiempo1$steps, na.rm = T))
+tiempo1$steps[is.na(tiempo1$steps)] = imputNa
+
+table(is.na(tiempo1$steps))
+```
+
+
+# 7. Histogram of the total number of steps taken each day after missing values are imputed.
+
+```{r}
+hist(tiempo1$steps)
+```
+
+# 8.Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends.#
+
+At this point, the data was individualized by days and the days were separated if they have been part of the fines of the week or days in the middle of the week, for the days that have been part of the weekends they will be taken On Friday, Saturday and Sunday, and for the days in the middle of the week, they were taken on Monday, Tuesday, Wednesday and Thursday.
+
+The following code represents this separation and the graph shows the comparison for days that are in the middle of the week and days that are in the weekend.
+
+```{r}
+dias <- wday(tiempo1$fecha)
+dias1 <- data.frame(diasem = c(dias))
+
+union <- cbind(tiempo1, dias1)
+str(union)
+
+semana <- filter(union, diasem %in% c(3, 4, 5, 6))
+finDsemana <- filter(union, diasem %in% c(1, 2, 7))
+
+par(mfrow = c(1, 2), mar = c(5, 4, 2, 1))
+
+semanaFac <- transform(semana,  diasem = factor(diasem))
+boxplot(steps ~ diasem, semanaFac, xlab = "Monday to thursday", ylab = "steps",
+        main = "weekday")
+
+finDfac <- transform(finDsemana,  diasem = factor(diasem))
+boxplot(steps ~ diasem, finDfac, xlab = "friday to sunday", ylab = "steps",
+        main = "Weekend")
+````
+
+# 9.All of the R code needed to reproduce the results (numbers, plots, etc.) in the report.
+
+
+As we can see, the codes that allow us to carry out each and every one of the procedures mentioned are included.
 
 
 
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
